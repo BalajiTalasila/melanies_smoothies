@@ -1,3 +1,6 @@
-snowflake-snowpark-python
-streamlit
 requests
+streamlit
+snowflake-connector-python
+snowflake-snowpark-python
+pandas
+numpy
