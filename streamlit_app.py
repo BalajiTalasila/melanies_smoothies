@@ -16,37 +16,50 @@ name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
 
 # --------------------------------------------------
-# Snowflake Connection (SniS)
+# Snowflake Connection (Streamlit not in Snowflake)
 # --------------------------------------------------
 cnx = st.connection("snowflake", type="snowflake")
 session = cnx.session()
 
 # --------------------------------------------------
-# Get Fruit Options from Snowflake
+# Get Fruit Options (FRUIT_NAME + SEARCH_ON)
 # --------------------------------------------------
-fruit_df = session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS").select(col("FRUIT_NAME"))
-fruit_list = [row["FRUIT_NAME"] for row in fruit_df.collect()]
+fruit_df = (
+    session
+    .table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
+    .select(col("FRUIT_NAME"), col("SEARCH_ON"))
+)
+
+fruit_rows = fruit_df.collect()
+
+# Build lookup dictionaries
+fruit_names = [row["FRUIT_NAME"] for row in fruit_rows]
+fruit_lookup = {
+    row["FRUIT_NAME"]: row["SEARCH_ON"]
+    for row in fruit_rows
+}
 
 # --------------------------------------------------
 # Ingredient Selection (Max 5)
 # --------------------------------------------------
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
-    fruit_list,
+    fruit_names,
     max_selections=5
 )
 
 # --------------------------------------------------
-# SmoothieFroot Nutrition Section
+# SmoothieFroot Nutrition Information
 # --------------------------------------------------
 if ingredients_list:
-
     for fruit_chosen in ingredients_list:
+
+        search_value = fruit_lookup.get(fruit_chosen)
 
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
         response = requests.get(
-            f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen.lower()}"
+            f"https://my.smoothiefroot.com/api/fruit/{search_value}"
         )
 
         if response.status_code == 200:
@@ -55,7 +68,7 @@ if ingredients_list:
                 use_container_width=True
             )
         else:
-            st.warning("Sorry, that fruit is not in our database.")
+            st.warning("Sorry, that fruit is not in the SmoothieFroot database.")
 
 # --------------------------------------------------
 # Submit Order
