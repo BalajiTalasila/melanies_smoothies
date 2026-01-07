@@ -53,12 +53,9 @@ if ingredients_list and name_on_order:
         session.sql(insert_stmt).collect()
         st.success(f"Your Smoothie is ordered, {name_on_order}! ✅")
 
-# SmoothieFroot nutrition info (correct placement)
+# ✅ SmoothieFroot API call (to show <Response [200]>)
 smoothiefroot_response = requests.get(
     "https://my.smoothiefroot.com/api/fruit/watermelon"
 )
 
-st.dataframe(
-    data=smoothiefroot_response.json(),
-    use_container_width=True
-)
+st.text(smoothiefroot_response)
