@@ -58,9 +58,6 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# --------------------------------------------------
-# SmoothieFroot Nutrition Information
-# --------------------------------------------------
 if ingredients_list:
 
     ingredients_string = ""
@@ -68,12 +65,22 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
 
-        # 🔑 Get SEARCH_ON using pandas loc/iloc
+        # ✅ Get SEARCH_ON value using pandas loc / iloc
         search_on = pd_df.loc[
-            pd_df["FRUIT_NAME"] == fruit_chosen,
-            "SEARCH_ON"
+            pd_df['FRUIT_NAME'] == fruit_chosen,
+            'SEARCH_ON'
         ].iloc[0]
 
+        # ✅ This text should appear exactly like the screenshot
+        st.write(
+            "The search value for ",
+            fruit_chosen,
+            " is ",
+            search_on,
+            "."
+        )
+
+        # ✅ Nutrition section
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
         response = requests.get(
@@ -87,6 +94,7 @@ if ingredients_list:
             )
         else:
             st.warning("Sorry, that fruit is not in the SmoothieFroot database.")
+
 
 # --------------------------------------------------
 # Submit Order
