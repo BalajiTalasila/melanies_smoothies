@@ -25,20 +25,22 @@ session = cnx.session()
 # --------------------------------------------------
 # Get FRUIT_NAME and SEARCH_ON from Snowflake
 # --------------------------------------------------
+# Get FRUIT_NAME and SEARCH_ON from Snowflake
 my_dataframe = (
     session
-    .table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
+    .table("smoothies.public.fruit_options")
     .select(col("FRUIT_NAME"), col("SEARCH_ON"))
 )
 
-# 🔍 VERIFY STEP (matches screenshot)
-st.dataframe(
-    data=my_dataframe,
-    use_container_width=True
-)
+# Convert the Snowpark DataFrame to a Pandas DataFrame
+pd_df = my_dataframe.to_pandas()
 
-# ⛔ Pause here so we can confirm SEARCH_ON values
+# Display it so we can verify SEARCH_ON values
+st.dataframe(pd_df, use_container_width=True)
+
+# Pause execution so we can focus on this step
 st.stop()
+
 
 # --------------------------------------------------
 # (THIS RUNS LATER — after removing st.stop())
