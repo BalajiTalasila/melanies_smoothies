@@ -23,7 +23,7 @@ cnx = st.connection("snowflake", type="snowflake")
 session = cnx.session()
 
 # --------------------------------------------------
-# Get FRUIT_NAME and SEARCH_ON from Snowflake
+# Get Fruit Options (FRUIT_NAME + SEARCH_ON)
 # --------------------------------------------------
 my_dataframe = (
     session
@@ -31,14 +31,11 @@ my_dataframe = (
     .select(col("FRUIT_NAME"), col("SEARCH_ON"))
 )
 
-# --------------------------------------------------
-# Convert Snowpark DataFrame → Pandas DataFrame
-# (Needed for loc / iloc)
-# --------------------------------------------------
+# Convert Snowpark → Pandas
 pd_df = my_dataframe.to_pandas()
 
 # --------------------------------------------------
-# Ingredient Selection (Max 5)
+# Ingredient Selection
 # --------------------------------------------------
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
@@ -47,7 +44,7 @@ ingredients_list = st.multiselect(
 )
 
 # --------------------------------------------------
-# SmoothieFroot Nutrition Information
+# SmoothieFroot Nutrition Info
 # --------------------------------------------------
 if ingredients_list:
 
@@ -56,19 +53,17 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
 
-        # 🔑 Get SEARCH_ON value using pandas loc/iloc
+        # 🔑 Get SEARCH_ON value
         search_on = pd_df.loc[
             pd_df["FRUIT_NAME"] == fruit_chosen,
             "SEARCH_ON"
         ].iloc[0]
 
-        # Show search mapping (as in screenshots)
         st.write(
-            "The search value for ",
+            "The search value for",
             fruit_chosen,
-            " is ",
-            search_on,
-            "."
+            "is",
+            search_on
         )
 
         st.subheader(f"{fruit_chosen} Nutrition Information")
@@ -78,10 +73,7 @@ if ingredients_list:
         )
 
         if response.status_code == 200:
-            st.dataframe(
-                response.json(),
-                use_container_width=True
-            )
+            st.dataframe(response.json(), use_container_width=True)
         else:
             st.warning("Sorry, that fruit is not in the SmoothieFroot database.")
 
