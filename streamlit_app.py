@@ -1,56 +1,44 @@
 # Import python packages
 import streamlit as st
-import requests
-import pandas as pd
-import numpy as np
-
 from snowflake.snowpark.functions import col
 
 # Write directly to the app
 st.title("🥤 Customize Your Smoothie!")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
+# Customer name
+name_on_order = st.text_input("Name on Smoothie:")
+st.write("The name on your Smoothie will be:", name_on_order)
 
-# Name input
-name_on_order = st.text_input('Name on Smoothie:')
-st.write('The name on your Smoothie will be', name_on_order)
-
-# Snowflake connection (Streamlit Cloud / SniS)
-cnx = st.connection("snowflake", type="snowflake")
+# Snowflake session
+cnx= st.connection("snowflake")
 session = cnx.session()
 
-# Get fruit options
-my_dataframe = session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS").select(col("FRUIT_NAME"))
+# Fruit options
+my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
+st.dataframe(my_dataframe, use_container_width=True)
 
-# Convert Snowpark DF → Python list
-fruit_list = [row["FRUIT_NAME"] for row in my_dataframe.collect()]
-
-# Multiselect with limit
+# Ingredient selection
 ingredients_list = st.multiselect(
-    'Choose up to 5 ingredients:',
-    fruit_list,
-    max_selections=5
+    "Choose up to 5 ingredients:",
+    my_dataframe
 )
 
-# Build ingredients string
 if ingredients_list and name_on_order:
-    ingredients_string = ''
 
+    # Build ingredients string
+    ingredients_string = ""
     for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen + ' '
+        ingredients_string += fruit_chosen + " "
 
-    insert_stmt = (
-        "INSERT INTO SMOOTHIES.PUBLIC.ORDERS (ingredients, name_on_order) "
-        "VALUES ('" + ingredients_string.strip() + "', '" + name_on_order + "')"
-    )
+    # ✅ FIXED INSERT (columns match values)
+    my_insert_stmt = f"""
+        INSERT INTO smoothies.public.orders (INGREDIENTS, NAME_ON_ORDER)
+        VALUES ('{ingredients_string}', '{name_on_order}')
+    """
+
+    st.code(my_insert_stmt, language="sql")
 
     if st.button("Submit Order"):
-        session.sql(insert_stmt).collect()
-        st.success(f"Your Smoothie is ordered, {name_on_order}! ✅")
-
-# ✅ SmoothieFroot API call (to show <Response [200]>)
-smoothiefroot_response = requests.get(
-    "https://my.smoothiefroot.com/api/fruit/watermelon"
-)
-
-st.text(smoothiefroot_response)
+        session.sql(my_insert_stmt).collect()
+        st.success("Your Smoothie is ordered! ✅")
