@@ -9,11 +9,11 @@ from snowflake.snowpark.functions import col
 # Write directly to the app
 st.title(f"Example Streamlit App :cup_with_straw: {st.__version__}")
 st.write(
-  """Replace this example with your own code!
-  **And if you're new to Streamlit,** check
-  out our easy-to-follow guides at
-  [docs.streamlit.io](https://docs.streamlit.io).
-  """
+    """Replace this example with your own code!
+    **And if you're new to Streamlit,** check
+    out our easy-to-follow guides at
+    [docs.streamlit.io](https://docs.streamlit.io).
+    """
 )
 
 # Name input
@@ -37,30 +37,28 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# Submit order
+# Build ingredients string
 if ingredients_list and name_on_order:
-    ingredients_string = " ".join(ingredients_list)
+    ingredients_string = ''
+
+    for fruit_chosen in ingredients_list:
+        ingredients_string += fruit_chosen + ' '
 
     insert_stmt = (
         "INSERT INTO SMOOTHIES.PUBLIC.ORDERS (ingredients, name_on_order) "
-        "VALUES ('" + ingredients_string + "', '" + name_on_order + "')"
+        "VALUES ('" + ingredients_string.strip() + "', '" + name_on_order + "')"
     )
 
     if st.button("Submit Order"):
         session.sql(insert_stmt).collect()
         st.success(f"Your Smoothie is ordered, {name_on_order}! ✅")
 
-# New section to display smoothiefroot nutrition information
-import requests
-
+# SmoothieFroot nutrition info (correct placement)
 smoothiefroot_response = requests.get(
     "https://my.smoothiefroot.com/api/fruit/watermelon"
 )
 
-# st.text(smoothiefroot_response.json())
-
-sf_df = st.dataframe(
+st.dataframe(
     data=smoothiefroot_response.json(),
     use_container_width=True
 )
-
