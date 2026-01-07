@@ -17,7 +17,7 @@ name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
 
 # --------------------------------------------------
-# Snowflake Connection (Streamlit not in Snowflake)
+# Snowflake Connection (SniS)
 # --------------------------------------------------
 cnx = st.connection("snowflake", type="snowflake")
 session = cnx.session()
@@ -25,28 +25,16 @@ session = cnx.session()
 # --------------------------------------------------
 # Get FRUIT_NAME and SEARCH_ON from Snowflake
 # --------------------------------------------------
-# Get FRUIT_NAME and SEARCH_ON from Snowflake
 my_dataframe = (
     session
-    .table("smoothies.public.fruit_options")
+    .table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
     .select(col("FRUIT_NAME"), col("SEARCH_ON"))
 )
 
-# Convert the Snowpark DataFrame to a Pandas DataFrame
-pd_df = my_dataframe.to_pandas()
-
-# Display it so we can verify SEARCH_ON values
-st.dataframe(pd_df, use_container_width=True)
-
-# Pause execution so we can focus on this step
-st.stop()
-
-
 # --------------------------------------------------
-# (THIS RUNS LATER — after removing st.stop())
+# Convert Snowpark DataFrame → Pandas DataFrame
+# (Needed for loc / iloc)
 # --------------------------------------------------
-
-# Convert Snowpark DF → Pandas DF
 pd_df = my_dataframe.to_pandas()
 
 # --------------------------------------------------
@@ -58,6 +46,9 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
+# --------------------------------------------------
+# SmoothieFroot Nutrition Information
+# --------------------------------------------------
 if ingredients_list:
 
     ingredients_string = ""
@@ -65,13 +56,13 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
 
-        # ✅ Get SEARCH_ON value using pandas loc / iloc
+        # 🔑 Get SEARCH_ON value using pandas loc/iloc
         search_on = pd_df.loc[
-            pd_df['FRUIT_NAME'] == fruit_chosen,
-            'SEARCH_ON'
+            pd_df["FRUIT_NAME"] == fruit_chosen,
+            "SEARCH_ON"
         ].iloc[0]
 
-        # ✅ This text should appear exactly like the screenshot
+        # Show search mapping (as in screenshots)
         st.write(
             "The search value for ",
             fruit_chosen,
@@ -80,7 +71,6 @@ if ingredients_list:
             "."
         )
 
-        # ✅ Nutrition section
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
         response = requests.get(
@@ -94,7 +84,6 @@ if ingredients_list:
             )
         else:
             st.warning("Sorry, that fruit is not in the SmoothieFroot database.")
-
 
 # --------------------------------------------------
 # Submit Order
@@ -111,4 +100,4 @@ if ingredients_list and name_on_order:
 
     if st.button("Submit Order"):
         session.sql(insert_stmt).collect()
-        st.success("Order(s) updated!")
+        st.success("Order(s) updated! ✅")
