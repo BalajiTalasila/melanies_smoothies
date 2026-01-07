@@ -49,3 +49,10 @@ if ingredients_list and name_on_order:
     if st.button("Submit Order"):
         session.sql(insert_stmt).collect()
         st.success(f"Your Smoothie is ordered, {name_on_order}! ✅")
+
+# SmoothieFroot API call
+smoothiefroot_response = requests.get(
+    "https://my.smoothiefroot.com/api/fruit/watermelon"
+)
+
+st.text(smoothiefroot_response.text)
