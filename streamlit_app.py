@@ -1,68 +1,91 @@
 # Import python packages
 import streamlit as st
+import requests
 import pandas as pd
-from snowflake.snowpark.functions import col, when_matched
+from snowflake.snowpark.functions import col
 
 # --------------------------------------------------
 # Page Title
 # --------------------------------------------------
-st.title("🥤 Customize your own smoothie")
+st.title("🥤 Customize Your Smoothie!")
 st.write("Choose the fruits you want for your custom smoothie")
 
 # --------------------------------------------------
-# Snowflake Connection (SniS / Streamlit Cloud)
+# Name on Order
+# --------------------------------------------------
+name_on_order = st.text_input("Name on Smoothie:")
+st.write("The name on your Smoothie will be:", name_on_order)
+
+# --------------------------------------------------
+# Snowflake Connection (Streamlit not in Snowflake)
 # --------------------------------------------------
 cnx = st.connection("snowflake", type="snowflake")
 session = cnx.session()
 
 # --------------------------------------------------
-# Load Orders
+# Get Fruit Options (FRUIT_NAME + SEARCH_ON)
 # --------------------------------------------------
-orders_df = (
+my_dataframe = (
     session
-    .table("SMOOTHIES.PUBLIC.ORDERS")
-    .select(
-        col("ORDER_UID"),
-        col("ORDER_FILLED"),
-        col("NAME_ON_ORDER"),
-        col("INGREDIENTS")
-    )
-    .order_by(col("ORDER_UID"))
+    .table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
+    .select(col("FRUIT_NAME"), col("SEARCH_ON"))
 )
 
-# Convert to Pandas
-orders_pd = orders_df.to_pandas()
+# Convert Snowpark DF → Pandas DF
+pd_df = my_dataframe.to_pandas()
 
 # --------------------------------------------------
-# Editable table
+# Ingredient Selection (Max 5)
 # --------------------------------------------------
-edited_df = st.data_editor(
-    orders_pd,
-    disabled=["ORDER_UID", "NAME_ON_ORDER", "INGREDIENTS"],
-    use_container_width=True
+ingredients_list = st.multiselect(
+    "Choose up to 5 ingredients:",
+    pd_df["FRUIT_NAME"].tolist(),
+    max_selections=5
 )
 
 # --------------------------------------------------
-# Submit changes
+# SmoothieFroot Nutrition Information
 # --------------------------------------------------
-submitted = st.button("Submit")
+if ingredients_list:
 
-if submitted:
-    try:
-        og_dataset = session.table("SMOOTHIES.PUBLIC.ORDERS")
-        edited_dataset = session.create_dataframe(edited_df)
+    ingredients_string = ""
 
-        og_dataset.merge(
-            edited_dataset,
-            og_dataset["ORDER_UID"] == edited_dataset["ORDER_UID"],
-            [
-                when_matched().update(
-                    {"ORDER_FILLED": edited_dataset["ORDER_FILLED"]}
-                )
-            ]
+    for fruit_chosen in ingredients_list:
+        ingredients_string += fruit_chosen + " "
+
+        # 🔑 Get SEARCH_ON value using pandas loc/iloc
+        search_on = pd_df.loc[
+            pd_df["FRUIT_NAME"] == fruit_chosen,
+            "SEARCH_ON"
+        ].iloc[0]
+
+        st.subheader(f"{fruit_chosen} Nutrition Information")
+
+        response = requests.get(
+            f"https://my.smoothiefroot.com/api/fruit/{search_on}"
         )
 
-        st.success("Order(s) updated!")
+        if response.status_code == 200:
+            st.dataframe(
+                response.json(),
+                use_container_width=True
+            )
+        else:
+            st.warning("Sorry, that fruit is not in the SmoothieFroot database.")
 
-    except Exception as e:
-        st.error("Something went wrong while updating orders.")
+# --------------------------------------------------
+# Submit Order
+# --------------------------------------------------
+if ingredients_list and name_on_order:
+
+    ingredients_string = ingredients_string.strip()
+
+    insert_stmt = (
+        "INSERT INTO SMOOTHIES.PUBLIC.ORDERS "
+        "(ingredients, name_on_order) "
+        f"VALUES ('{ingredients_string}', '{name_on_order}')"
+    )
+
+    if st.button("Submit Order"):
+        session.sql(insert_stmt).collect()
+        st.success("Order(s) updated!")
