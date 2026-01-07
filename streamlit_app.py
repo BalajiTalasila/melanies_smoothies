@@ -1,22 +1,22 @@
 # Import python packages
 import streamlit as st
-from snowflake.snowpark.context import get_active_session
+import pandas as pd
 from snowflake.snowpark.functions import col, when_matched
 
 # --------------------------------------------------
 # Page Title
 # --------------------------------------------------
 st.title("🥤 Customize your own smoothie")
-
 st.write("Choose the fruits you want for your custom smoothie")
 
 # --------------------------------------------------
-# Get Snowflake session (SiS / SniS compatible)
+# Snowflake Connection (SniS / Streamlit Cloud)
 # --------------------------------------------------
-session = get_active_session()
+cnx = st.connection("snowflake", type="snowflake")
+session = cnx.session()
 
 # --------------------------------------------------
-# Load Orders that are NOT NULL
+# Load Orders
 # --------------------------------------------------
 orders_df = (
     session
@@ -30,7 +30,7 @@ orders_df = (
     .order_by(col("ORDER_UID"))
 )
 
-# Convert to Pandas for editing
+# Convert to Pandas
 orders_pd = orders_df.to_pandas()
 
 # --------------------------------------------------
@@ -43,7 +43,7 @@ edited_df = st.data_editor(
 )
 
 # --------------------------------------------------
-# Submit button
+# Submit changes
 # --------------------------------------------------
 submitted = st.button("Submit")
 
