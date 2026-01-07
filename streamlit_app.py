@@ -1,7 +1,9 @@
 # Import python packages
 import streamlit as st
 import requests
+import pandas as pd
 from snowflake.snowpark.functions import col
+
 
 # --------------------------------------------------
 # Page Title
