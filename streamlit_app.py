@@ -23,13 +23,26 @@ cnx = st.connection("snowflake", type="snowflake")
 session = cnx.session()
 
 # --------------------------------------------------
-# Get Fruit Options (FRUIT_NAME + SEARCH_ON)
+# Get FRUIT_NAME and SEARCH_ON from Snowflake
 # --------------------------------------------------
 my_dataframe = (
     session
     .table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
     .select(col("FRUIT_NAME"), col("SEARCH_ON"))
 )
+
+# 🔍 VERIFY STEP (matches screenshot)
+st.dataframe(
+    data=my_dataframe,
+    use_container_width=True
+)
+
+# ⛔ Pause here so we can confirm SEARCH_ON values
+st.stop()
+
+# --------------------------------------------------
+# (THIS RUNS LATER — after removing st.stop())
+# --------------------------------------------------
 
 # Convert Snowpark DF → Pandas DF
 pd_df = my_dataframe.to_pandas()
@@ -53,7 +66,7 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
 
-        # 🔑 Get SEARCH_ON value using pandas loc/iloc
+        # 🔑 Get SEARCH_ON using pandas loc/iloc
         search_on = pd_df.loc[
             pd_df["FRUIT_NAME"] == fruit_chosen,
             "SEARCH_ON"
